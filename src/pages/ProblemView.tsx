@@ -5,6 +5,7 @@ import { db } from '../config/firebase'
 import { LiveProvider, LiveError, LivePreview } from 'react-live'
 import { useAuth } from '../contexts/AuthContext'
 import MonacoEditor from '@monaco-editor/react'
+import AIPrompter from '../components/AIPrompter'
 
 interface Problem {
   id: string
@@ -120,8 +121,8 @@ export default function ProblemView() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100">
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-100 flex">
+      <div className="flex-1 max-w-5xl ml-8 py-6 sm:px-4 lg:px-6">
         <div className="px-4 py-6 sm:px-0">
           <div className="bg-white shadow overflow-hidden sm:rounded-lg">
             <div className="px-4 py-5 sm:px-6">
@@ -138,89 +139,89 @@ export default function ProblemView() {
               </div>
             </div>
           </div>
-
-          <LiveProvider code={code}>
-            <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2">
-              <div className="bg-white shadow sm:rounded-lg">
-                <div className="px-4 py-5 sm:p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg leading-6 font-medium text-gray-900">
-                      Code Editor
-                    </h3>
-                    <div>
-                      <label htmlFor="language-select" className="mr-2 font-medium">Language:</label>
-                      <select
-                        id="language-select"
-                        value={language}
-                        onChange={e => setLanguage(e.target.value)}
-                        className="border rounded px-2 py-1"
-                      >
-                        <option value="javascript">JavaScript</option>
-                        <option value="python">Python</option>
-                        <option value="java">Java</option>
-                        <option value="cpp">C++</option>
-                      </select>
-                    </div>
-                  </div>
-                  <MonacoEditor
-                    height="500px"
-                    language={language}
-                    theme="vs-dark"
-                    value={code}
-                    onChange={(value) => setCode(value || '')}
-                    options={{
-                      fontSize: 14,
-                      minimap: { enabled: false },
-                      scrollBeyondLastLine: false,
-                      wordWrap: 'on',
-                    }}
-                  />
-                  <div className="mt-4 flex gap-2">
-                    <button
-                      onClick={handleSubmit}
-                      className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+          <div className="mt-8 grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div className="bg-white shadow sm:rounded-lg">
+              <div className="px-4 py-5 sm:p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg leading-6 font-medium text-gray-900">
+                    Code Editor
+                  </h3>
+                  <div>
+                    <label htmlFor="language-select" className="mr-2 font-medium">Language:</label>
+                    <select
+                      id="language-select"
+                      value={language}
+                      onChange={e => setLanguage(e.target.value)}
+                      className="border rounded px-2 py-1"
                     >
-                      Submit
-                    </button>
-                    <button
-                      onClick={handleRun}
-                      className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-                      disabled={isRunning}
-                    >
-                      {isRunning ? 'Running...' : 'Run'}
-                    </button>
+                      <option value="javascript">JavaScript</option>
+                      <option value="python">Python</option>
+                      <option value="java">Java</option>
+                      <option value="cpp">C++</option>
+                    </select>
                   </div>
-                  {submitStatus && (
-                    <div className="mt-2 text-sm">
-                      {submitStatus}
+                </div>
+                <MonacoEditor
+                  height="500px"
+                  language={language}
+                  theme="vs-dark"
+                  value={code}
+                  onChange={(value) => setCode(value || '')}
+                  options={{
+                    fontSize: 14,
+                    minimap: { enabled: false },
+                    scrollBeyondLastLine: false,
+                    wordWrap: 'on',
+                  }}
+                />
+                <div className="mt-4 flex gap-2">
+                  <button
+                    onClick={handleSubmit}
+                    className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                  >
+                    Submit
+                  </button>
+                  <button
+                    onClick={handleRun}
+                    className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                    disabled={isRunning}
+                  >
+                    {isRunning ? 'Running...' : 'Run'}
+                  </button>
+                </div>
+                {submitStatus && (
+                  <div className="mt-2 text-sm">
+                    {submitStatus}
+                  </div>
+                )}
+              </div>
+            </div>
+            <div className="bg-white shadow sm:rounded-lg">
+              <div className="px-4 py-5 sm:p-6">
+                <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
+                  Preview
+                </h3>
+                <div className="border rounded-lg p-4 min-h-[500px]">
+                  {language === 'javascript' && (
+                    <>
+                      <LivePreview />
+                      <LiveError className="mt-2 text-red-600" />
+                    </>
+                  )}
+                  {output && (
+                    <div className="mt-4 p-3 bg-gray-900 text-white rounded">
+                      <div className="font-semibold mb-1">Output:</div>
+                      <pre className="whitespace-pre-wrap break-words">{output}</pre>
                     </div>
                   )}
                 </div>
               </div>
-              <div className="bg-white shadow sm:rounded-lg">
-                <div className="px-4 py-5 sm:p-6">
-                  <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Preview
-                  </h3>
-                  <div className="border rounded-lg p-4 min-h-[500px]">
-                    {language === 'javascript' && (
-                      <>
-                        <LivePreview />
-                        <LiveError className="mt-2 text-red-600" />
-                      </>
-                    )}
-                    {output && (
-                      <div className="mt-4 p-3 bg-gray-900 text-white rounded">
-                        <div className="font-semibold mb-1">Output:</div>
-                        <pre className="whitespace-pre-wrap break-words">{output}</pre>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
             </div>
-          </LiveProvider>
+          </div>
         </div>
+      </div>
+      <div className="h-full">
+        <AIPrompter widthClass="w-96" />
       </div>
     </div>
   )
