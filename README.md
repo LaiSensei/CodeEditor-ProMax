@@ -101,6 +101,12 @@ src/
 - `npm run preview` - Preview production build
 - `npm run lint` - Run ESLint
 
+## Future Plans
+
+1. Make the editor have public URL
+2. Add WebTRC-related features
+3. Add MFA authentication system for Login
+
 ## Contributing
 
 1. Fork the repository
