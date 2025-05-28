@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { doc, getDoc, collection, addDoc, serverTimestamp } from 'firebase/firestore'
 import { db } from '../config/firebase'
@@ -58,6 +58,13 @@ export default function ProblemView() {
   const [output, setOutput] = useState<string | null>(null)
   const [isRunning, setIsRunning] = useState(false)
   const [editorInstance, setEditorInstance] = useState<monaco.editor.IStandaloneCodeEditor | null>(null)
+  const [pendingSuggestion, setPendingSuggestion] = useState<{
+    type: 'insert' | 'replace',
+    code: string,
+    range?: monaco.Range
+  } | null>(null)
+  const [chat, setChat] = useState<{ role: 'user' | 'assistant', content: string }[]>([])
+  const [lastSuggestedCode, setLastSuggestedCode] = useState<string | null>(null)
 
   useEffect(() => {
     async function fetchProblem() {
@@ -113,6 +120,32 @@ export default function ProblemView() {
     }
     setIsRunning(false)
   }
+
+  // Handler to accept suggestion from AIPrompter
+  function handleAISuggestion(suggestion: { type: 'insert' | 'replace', code: string, range?: monaco.Range }) {
+    setPendingSuggestion(suggestion)
+  }
+
+  // Listen for new AI assistant messages and auto-trigger suggestion notification
+  useEffect(() => {
+    if (!editorInstance) return;
+    if (chat.length === 0) return;
+    const lastAI = [...chat].reverse().find((msg) => msg.role === 'assistant');
+    if (!lastAI) return;
+    // Extract code block
+    const matches = Array.from(lastAI.content.matchAll(/```(?:[a-zA-Z]*)\n([\s\S]*?)```/g));
+    if (matches.length === 0) return;
+    const code = matches[matches.length - 1][1].trim();
+    // Only trigger if not already pending and not already suggested
+    if ((pendingSuggestion && pendingSuggestion.code === code) || lastSuggestedCode === code) return;
+    // Determine intent: replace if selection, insert otherwise
+    const selection = editorInstance.getSelection();
+    if (selection && !selection.isEmpty()) {
+      setPendingSuggestion({ type: 'replace', code, range: selection });
+    } else {
+      setPendingSuggestion({ type: 'insert', code });
+    }
+  }, [editorInstance, chat, pendingSuggestion, lastSuggestedCode]);
 
   if (loading) {
     return <div className="text-center">Loading problem...</div>
@@ -224,8 +257,50 @@ export default function ProblemView() {
         </div>
       </div>
       <div className="h-full">
-        <AIPrompter editor={editorInstance} />
+        <AIPrompter
+          editor={editorInstance}
+          onAISuggestion={handleAISuggestion}
+          chat={chat}
+          setChat={setChat}
+        />
       </div>
+      {/* AI Suggestion Modal/Notification */}
+      {pendingSuggestion && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-30">
+          <div className="bg-white rounded-lg shadow-lg p-6 max-w-lg w-full">
+            <h2 className="text-lg font-semibold mb-2">AI Suggestion: {pendingSuggestion.type === 'insert' ? 'Insert' : 'Replace'}</h2>
+            <pre className="bg-gray-900 text-white p-3 rounded mb-4 overflow-x-auto max-h-60 whitespace-pre-wrap break-words">
+              {pendingSuggestion.code}
+            </pre>
+            <div className="flex justify-end gap-2">
+              <button
+                className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+                onClick={() => {
+                  if (!editorInstance) return;
+                  if (pendingSuggestion.type === 'insert') {
+                    editorInstance.trigger('ai', 'type', { text: pendingSuggestion.code });
+                  } else if (pendingSuggestion.type === 'replace' && pendingSuggestion.range) {
+                    editorInstance.executeEdits('ai', [{ range: pendingSuggestion.range, text: pendingSuggestion.code }]);
+                  }
+                  setLastSuggestedCode(pendingSuggestion.code);
+                  setPendingSuggestion(null);
+                }}
+              >
+                Accept
+              </button>
+              <button
+                className="px-4 py-2 bg-gray-300 text-gray-800 rounded hover:bg-gray-400"
+                onClick={() => {
+                  setLastSuggestedCode(pendingSuggestion.code);
+                  setPendingSuggestion(null);
+                }}
+              >
+                Reject
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 

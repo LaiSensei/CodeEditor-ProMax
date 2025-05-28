@@ -39,12 +39,14 @@ async function fetchOpenAICompletion(prompt: string, model: string): Promise<str
 
 interface AIPrompterProps {
   editor: monaco.editor.IStandaloneCodeEditor | null;
+  onAISuggestion?: (suggestion: { type: 'insert' | 'replace', code: string, range?: monaco.Range }) => void;
+  chat: { role: 'user' | 'assistant', content: string }[];
+  setChat: React.Dispatch<React.SetStateAction<{ role: 'user' | 'assistant', content: string }[]>>;
 }
 
-export default function AIPrompter({ editor }: AIPrompterProps) {
+export default function AIPrompter({ editor, onAISuggestion, chat, setChat }: AIPrompterProps) {
   const [model, setModel] = useState('gpt-4.1-mini');
   const [prompt, setPrompt] = useState('');
-  const [chat, setChat] = useState<{ role: 'user' | 'assistant', content: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const outputRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
