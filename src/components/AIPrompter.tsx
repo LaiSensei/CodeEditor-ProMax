@@ -44,19 +44,19 @@ interface AIPrompterProps {
   setChat: React.Dispatch<React.SetStateAction<{ role: 'user' | 'assistant', content: string }[]>>;
 }
 
-export default function AIPrompter({ editor, onAISuggestion, chat, setChat }: AIPrompterProps) {
+export default function AIPrompter({ editor, chat, setChat }: AIPrompterProps) {
   const [model, setModel] = useState('gpt-4.1-mini');
   const [prompt, setPrompt] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const outputRef = useRef<HTMLDivElement>(null);
-  const [showScrollButton, setShowScrollButton] = useState(false);
+  const [, setShowScrollButton] = useState(false);
   const [width, setWidth] = useState(400); // px
   const minWidth = 320;
   const maxWidth = 700;
   const isResizing = useRef(false);
   const [atBottom, setAtBottom] = useState(true);
   const userPromptCount = chat.filter(msg => msg.role === 'user').length;
-  const [selectionVersion, setSelectionVersion] = useState(0);
+  const [, setSelectionVersion] = useState(0);
 
   // Handle drag to resize
   useEffect(() => {
