@@ -36,13 +36,37 @@ async function fetchOpenAICompletion(prompt: string, model: string): Promise<str
   return data.choices?.[0]?.message?.content || 'No response from AI.';
 }
 
-export default function AIPrompter({ widthClass = 'w-100' }: { widthClass?: string }) {
+export default function AIPrompter() {
   const [model, setModel] = useState('gpt-4.1-mini');
   const [prompt, setPrompt] = useState('');
   const [chat, setChat] = useState<{ role: 'user' | 'assistant', content: string }[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const outputRef = useRef<HTMLDivElement>(null);
   const [showScrollButton, setShowScrollButton] = useState(false);
+  const [width, setWidth] = useState(400); // px
+  const minWidth = 320;
+  const maxWidth = 700;
+  const isResizing = useRef(false);
+  const [atBottom, setAtBottom] = useState(true);
+  const userPromptCount = chat.filter(msg => msg.role === 'user').length;
+
+  // Handle drag to resize
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing.current) return;
+      const newWidth = Math.min(Math.max(window.innerWidth - e.clientX, minWidth), maxWidth);
+      setWidth(newWidth);
+    };
+    const handleMouseUp = () => {
+      isResizing.current = false;
+    };
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, []);
 
   const handleSend = async () => {
     if (!prompt.trim()) return;
@@ -95,8 +119,39 @@ export default function AIPrompter({ widthClass = 'w-100' }: { widthClass?: stri
     }
   }, [chat]);
 
+  // Update atBottom state on scroll
+  useEffect(() => {
+    const ref = outputRef.current;
+    if (!ref) return;
+    const handleScroll = () => {
+      setAtBottom(ref.scrollHeight - ref.scrollTop - ref.clientHeight < 10);
+    };
+    ref.addEventListener('scroll', handleScroll);
+    return () => ref.removeEventListener('scroll', handleScroll);
+  }, []);
+
   return (
-    <aside className={`flex flex-col ${widthClass} border-l bg-white p-4 fixed right-0 z-20 border-t`} style={{ top: '64px', height: 'calc(100vh - 64px)', borderTopWidth: '2px', borderTopColor: '#e5e7eb' }}>
+    <aside
+      className="flex flex-col border-l bg-white p-4 fixed right-0 z-20 border-t"
+      style={{
+        width: width + 'px',
+        top: '64px',
+        height: 'calc(100vh - 64px)',
+        borderTopWidth: '2px',
+        borderTopColor: '#e5e7eb',
+        transition: isResizing.current ? 'none' : 'width 0.1s',
+        userSelect: isResizing.current ? 'none' : 'auto',
+      }}
+    >
+      {/* Drag handle */}
+      <div
+        className="absolute left-0 top-0 h-full w-2 cursor-ew-resize z-30 bg-transparent hover:bg-gray-200"
+        style={{ marginLeft: '-8px' }}
+        onMouseDown={e => {
+          e.preventDefault();
+          isResizing.current = true;
+        }}
+      />
       <div className="flex items-center mb-4">
         <span className="font-semibold mr-2">AI Model:</span>
         <select
@@ -145,15 +200,17 @@ export default function AIPrompter({ widthClass = 'w-100' }: { widthClass?: stri
             </div>
           ))
         )}
-        {showScrollButton && (
-          <button
-            className="absolute right-2 bottom-2 bg-gray-300 hover:bg-gray-400 text-xs px-2 py-1 rounded shadow"
-            onClick={() => {
-              if (outputRef.current) outputRef.current.scrollTop = outputRef.current.scrollHeight;
-            }}
-          >
-            Scroll to bottom
-          </button>
+        {userPromptCount >= 3 && !atBottom && (
+          <div className="absolute left-1/2 bottom-0 -translate-x-1/2 mb-2 flex justify-center w-full pointer-events-none">
+            <button
+              className="bg-gray-300 hover:bg-gray-400 text-xs px-3 py-1 rounded shadow pointer-events-auto"
+              onClick={() => {
+                if (outputRef.current) outputRef.current.scrollTop = outputRef.current.scrollHeight;
+              }}
+            >
+              Scroll to bottom
+            </button>
+          </div>
         )}
       </div>
       <div className="flex flex-col gap-2">

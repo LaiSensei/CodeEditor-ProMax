@@ -221,7 +221,7 @@ export default function ProblemView() {
         </div>
       </div>
       <div className="h-full">
-        <AIPrompter widthClass="w-96" />
+        <AIPrompter />
       </div>
     </div>
   )
