@@ -54,6 +54,7 @@ export default function AIPrompter({ editor }: AIPrompterProps) {
   const isResizing = useRef(false);
   const [atBottom, setAtBottom] = useState(true);
   const userPromptCount = chat.filter(msg => msg.role === 'user').length;
+  const [selectionVersion, setSelectionVersion] = useState(0);
 
   // Handle drag to resize
   useEffect(() => {
@@ -158,9 +159,24 @@ export default function AIPrompter({ editor }: AIPrompterProps) {
     const code = getLastCodeBlock();
     if (!code) return;
     const selection = editor.getSelection();
-    if (!selection) return;
+    if (!selection || selection.isEmpty()) return;
     editor.executeEdits('ai', [{ range: selection, text: code }]);
   }
+
+  // Helper to check if there is a non-empty selection
+  function hasNonEmptySelection() {
+    if (!editor) return false;
+    const selection = editor.getSelection();
+    return selection && !selection.isEmpty();
+  }
+
+  useEffect(() => {
+    if (!editor) return;
+    const disposable = editor.onDidChangeCursorSelection(() => {
+      setSelectionVersion(v => v + 1); // force re-render
+    });
+    return () => disposable && disposable.dispose();
+  }, [editor]);
 
   return (
     <aside
@@ -272,7 +288,7 @@ export default function AIPrompter({ editor }: AIPrompterProps) {
           <button
             className="bg-blue-600 text-white rounded px-3 py-1"
             onClick={handleReplace}
-            disabled={!editor || !getLastCodeBlock()}
+            disabled={!editor || !getLastCodeBlock() || !hasNonEmptySelection()}
           >
             Replace
           </button>
