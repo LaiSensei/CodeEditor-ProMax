@@ -1,12 +1,17 @@
 # Online Code Editor Platform
 
-A modern web application for practicing coding problems with live React code execution.
+A modern web application for practicing coding problems with live code execution, multi-language support, and an AI-powered assistant.
 
 ## Features
 
 - User authentication with Firebase (register, login, logout, email verification, password reset)
 - View and solve coding problems
-- Live React code editor with Monaco Editor and react-live preview
+- Live code editor with Monaco Editor
+- **Multi-language support:** JavaScript, Python, Java, C++ (syntax highlighting and execution)
+- **Backend code execution:** Securely run code in multiple languages using Judge0 API
+- **AI Prompter sidebar:** Chat with an AI assistant (OpenAI GPT-4.1 Mini or GPT-4o) for code generation, analysis, and debugging
+- **Markdown and code block rendering:** AI output supports markdown, syntax-highlighted code blocks, and copy-to-clipboard for code
+- **Chat history:** Full chat history with user and AI messages, styled for clarity
 - Problem difficulty levels
 - Real-time code execution and error display
 - Submission storage (save your code for each problem)
@@ -18,7 +23,9 @@ A modern web application for practicing coding problems with live React code exe
 - Firebase (Authentication & Firestore)
 - Tailwind CSS for styling
 - Monaco Editor for code editing
-- react-live for code execution and preview
+- Judge0 API for backend code execution
+- OpenAI API for AI assistant
+- react-markdown, react-syntax-highlighter for markdown/code rendering
 - Vite for build tooling
 
 ## Prerequisites
@@ -26,13 +33,15 @@ A modern web application for practicing coding problems with live React code exe
 - Node.js (v14 or higher)
 - npm or yarn
 - Firebase account
+- OpenAI account (for AI features)
+- RapidAPI account (for Judge0 API key)
 
 ## Setup
 
 1. Clone the repository:
 ```bash
 git clone <repository-url>
-cd online-code-editor
+cd CodeEditor-ProMax
 ```
 
 2. Install dependencies:
@@ -44,7 +53,7 @@ npm install
    - Authentication (Email/Password)
    - Firestore Database
 
-4. Create a `.env` file in the root directory with your Firebase configuration:
+4. Create a `.env` file in the root directory with your configuration:
 ```
 VITE_FIREBASE_API_KEY=your_api_key
 VITE_FIREBASE_AUTH_DOMAIN=your_auth_domain
@@ -52,6 +61,8 @@ VITE_FIREBASE_PROJECT_ID=your_project_id
 VITE_FIREBASE_STORAGE_BUCKET=your_storage_bucket
 VITE_FIREBASE_MESSAGING_SENDER_ID=your_messaging_sender_id
 VITE_FIREBASE_APP_ID=your_app_id
+VITE_JUDGE0_API_KEY=your_judge0_rapidapi_key
+VITE_OPENAI_API_KEY=sk-...your_openai_api_key...
 ```
 
 5. Start the development server:
@@ -63,7 +74,7 @@ npm run dev
 
 ```
 src/
-  ├── components/     # Reusable components (Layout, PrivateRoute)
+  ├── components/     # Reusable components (Layout, PrivateRoute, AIPrompter)
   ├── contexts/       # React contexts (AuthContext)
   ├── pages/          # Page components (Login, Register, ForgotPassword, Dashboard, ProblemView)
   ├── config/         # Firebase configuration
@@ -75,17 +86,13 @@ src/
 
 - **Authentication:** Register, login, logout, email verification, and password reset (forgot password) using Firebase Auth.
 - **Problem Viewing:** Problems are stored in Firestore and displayed in a dashboard. Each problem has a title, difficulty, description, and starter code.
-- **Code Editor & Live Preview:** Uses Monaco Editor for a professional editing experience and react-live for live React code execution and preview.
-- **Error Handling:** Syntax and runtime errors are displayed below the editor. Monaco provides inline syntax error highlighting.
+- **Code Editor & Multi-Language Execution:** Uses Monaco Editor for a professional editing experience. Supports JavaScript, Python, Java, and C++ with syntax highlighting and backend execution via Judge0.
+- **AI Prompter Sidebar:** Chat with an AI assistant (OpenAI GPT-4.1 Mini or GPT-4o). Supports code generation, analysis, and debugging. Output is rendered with markdown, code blocks, and copy buttons.
+- **Markdown & Code Rendering:** AI output supports markdown formatting, syntax-highlighted code blocks, and copy-to-clipboard for code.
+- **Chat History:** Full chat history is displayed in the sidebar, showing both user prompts and AI responses.
+- **Error Handling:** Syntax and runtime errors are displayed in the preview window. Monaco provides inline syntax error highlighting.
 - **Submission Storage:** User code submissions are saved to Firestore with user, problem, code, and timestamp.
 - **Password Reset:** Users can request a password reset email from the login page.
-
-## Limitations & Future Improvements
-
-- **Code Execution:** Only JavaScript/React code is supported in the editor and preview. Code is executed in-browser using react-live and Babel, which is suitable for MVP/demo purposes but not for running untrusted or infinite-loop code securely.
-- **No Automated Correctness Checking:** The platform does not currently run user code against test cases or provide pass/fail feedback. For a production system, you would add a backend code runner (e.g., Judge0) and test case support.
-- **Single Language:** Only JavaScript/React is supported. Multi-language support would require backend integration with a code execution API.
-- **Security:** For a real-world platform, additional sandboxing and security measures would be needed for code execution.
 
 ## Development
 
