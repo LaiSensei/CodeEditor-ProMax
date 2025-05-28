@@ -6,6 +6,7 @@ import { LiveProvider, LiveError, LivePreview } from 'react-live'
 import { useAuth } from '../contexts/AuthContext'
 import MonacoEditor from '@monaco-editor/react'
 import AIPrompter from '../components/AIPrompter'
+import * as monaco from 'monaco-editor'
 
 interface Problem {
   id: string
@@ -56,6 +57,7 @@ export default function ProblemView() {
   const [language, setLanguage] = useState('javascript')
   const [output, setOutput] = useState<string | null>(null)
   const [isRunning, setIsRunning] = useState(false)
+  const [editorInstance, setEditorInstance] = useState<monaco.editor.IStandaloneCodeEditor | null>(null)
 
   useEffect(() => {
     async function fetchProblem() {
@@ -173,6 +175,7 @@ export default function ProblemView() {
                     scrollBeyondLastLine: false,
                     wordWrap: 'on',
                   }}
+                  onMount={(editor) => setEditorInstance(editor)}
                 />
                 <div className="mt-4 flex gap-2">
                   <button
@@ -221,7 +224,7 @@ export default function ProblemView() {
         </div>
       </div>
       <div className="h-full">
-        <AIPrompter />
+        <AIPrompter editor={editorInstance} />
       </div>
     </div>
   )

@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import type * as monaco from 'monaco-editor';
 
 const MODELS = [
   { label: 'GPT-4.1 Mini', value: 'gpt-4.1-mini' },
@@ -36,7 +37,11 @@ async function fetchOpenAICompletion(prompt: string, model: string): Promise<str
   return data.choices?.[0]?.message?.content || 'No response from AI.';
 }
 
-export default function AIPrompter() {
+interface AIPrompterProps {
+  editor: monaco.editor.IStandaloneCodeEditor | null;
+}
+
+export default function AIPrompter({ editor }: AIPrompterProps) {
   const [model, setModel] = useState('gpt-4.1-mini');
   const [prompt, setPrompt] = useState('');
   const [chat, setChat] = useState<{ role: 'user' | 'assistant', content: string }[]>([]);
@@ -129,6 +134,33 @@ export default function AIPrompter() {
     ref.addEventListener('scroll', handleScroll);
     return () => ref.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Helper to extract the latest code block from the last AI message
+  function getLastCodeBlock() {
+    const lastAI = [...chat].reverse().find(msg => msg.role === 'assistant');
+    if (!lastAI) return '';
+    // Match all code blocks (robust)
+    const matches = Array.from(lastAI.content.matchAll(/```(?:[a-zA-Z]*)\n([\s\S]*?)```/g));
+    return matches.length > 0 ? matches[matches.length - 1][1].trim() : '';
+  }
+
+  // Insert code at cursor
+  function handleInsert() {
+    if (!editor) return;
+    const code = getLastCodeBlock();
+    if (!code) return;
+    editor.trigger('ai', 'type', { text: code });
+  }
+
+  // Replace selected code
+  function handleReplace() {
+    if (!editor) return;
+    const code = getLastCodeBlock();
+    if (!code) return;
+    const selection = editor.getSelection();
+    if (!selection) return;
+    editor.executeEdits('ai', [{ range: selection, text: code }]);
+  }
 
   return (
     <aside
@@ -230,8 +262,20 @@ export default function AIPrompter() {
         </button>
         {/* Placeholder for Insert/Replace buttons */}
         <div className="flex gap-2 mt-2">
-          <button className="bg-green-600 text-white rounded px-3 py-1" disabled>Insert</button>
-          <button className="bg-blue-600 text-white rounded px-3 py-1" disabled>Replace</button>
+          <button
+            className="bg-green-600 text-white rounded px-3 py-1"
+            onClick={handleInsert}
+            disabled={!editor || !getLastCodeBlock()}
+          >
+            Insert
+          </button>
+          <button
+            className="bg-blue-600 text-white rounded px-3 py-1"
+            onClick={handleReplace}
+            disabled={!editor || !getLastCodeBlock()}
+          >
+            Replace
+          </button>
         </div>
       </div>
     </aside>
