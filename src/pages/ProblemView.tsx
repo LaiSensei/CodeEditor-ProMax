@@ -109,8 +109,6 @@ export default function ProblemView() {
     setOutput(null)
     setRunError(null)
     try {
-      // Only run for non-JS languages
-      if (language === 'javascript') return
       const JUDGE0_LANGUAGE_IDS: Record<string, number> = {
         javascript: 63,
         python: 71,
@@ -142,8 +140,9 @@ export default function ProblemView() {
       else setOutput('No output')
     } catch (err: any) {
       setRunError('Error running code')
+    } finally {
+      setIsRunning(false)
     }
-    setIsRunning(false)
   }
 
   // Handler to accept suggestion from AIPrompter
@@ -272,18 +271,16 @@ export default function ProblemView() {
                 <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
                   Preview
                 </h3>
-                <div className="border rounded-lg p-4 min-h-[500px]">
-                  {language === 'javascript' ? (
+                <div className="border rounded-lg p-4 min-h-[500px] flex flex-col">
+                  {language === 'javascript' && (
                     <LiveProvider code={isCodeSafe(code) ? code : ''}>
                       <LivePreview />
                       <LiveError className="mt-2 text-red-600 whitespace-pre-wrap break-words w-full" />
                     </LiveProvider>
-                  ) : (
-                    <>
-                      {output && <pre className="whitespace-pre-wrap break-words">{output}</pre>}
-                      {runError && <div className="text-red-600">{runError}</div>}
-                    </>
                   )}
+                  {/* Always show output/error from Judge0 */}
+                  {output && <pre className="whitespace-pre-wrap break-words">{output}</pre>}
+                  {runError && <div className="text-red-600 whitespace-pre-wrap break-words">{runError}</div>}
                 </div>
               </div>
             </div>
